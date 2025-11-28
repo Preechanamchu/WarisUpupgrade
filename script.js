@@ -1,10 +1,9 @@
 /**
- * WARISHAYDAY System V7.0 - PostgreSQL & API Edition
- * Connects to Netlify Functions + Neon Tech Database
+ * WARISHAYDAY System V7.1 - Hybrid Edition (API + Offline Fallback)
+ * Connects to Netlify Functions (Neon Tech) with LocalStorage Backup
  */
 
-// ================= DATA STRUCTURE (DEFAULT FALLBACK) =================
-// ค่าเริ่มต้นกรณีที่ยังไม่เคย Save ลง DB
+// ================= DATA STRUCTURE =================
 const DEFAULT_CONFIG = {
     shopName: "WARISHAYDAY",
     slogan: "บริการอัพเกรดรวดเร็วทันใจ",
@@ -33,52 +32,96 @@ const DEFAULT_CONFIG = {
     }
 };
 
-const API_URL = "/.netlify/functions/api"; // URL ของ Backend บน Netlify
+const API_URL = "/.netlify/functions/api"; 
+const ADMIN_PIN_FALLBACK = "210406"; // ใช้เมื่อต่อ Server ไม่ได้
 
-// ================= API MANAGER (Replaces LocalStorage) =================
+// ================= HYBRID DATA MANAGER =================
 class DataManager {
     constructor() {
         this.config = null;
         this.orders = [];
-        // เราจะไม่ Init ทันทีใน Constructor เพราะต้องรอ Async fetch
+        this.isOffline = false; // สถานะการทำงาน
     }
 
     async init() {
-        await this.fetchConfig();
-        await this.fetchOrders();
-        this.applySettings();
-    }
-
-    async fetchConfig() {
+        console.log("Initializing System...");
         try {
-            const res = await fetch(`${API_URL}/config`);
+            // ลองต่อ Server (Timeout 3 วินาที)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            
+            const res = await fetch(`${API_URL}/config`, { signal: controller.signal });
+            clearTimeout(timeoutId);
+
+            if (!res.ok) throw new Error("Server response not OK");
+
             const data = await res.json();
-            // ถ้า Object ว่าง (เพิ่งสร้าง DB) ให้ใช้ Default
+            console.log("Online Mode Connected");
+            
             if (Object.keys(data).length === 0) {
                 this.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
-                // Save กลับไปครั้งแรก
                 await this.saveConfig(this.config);
             } else {
                 this.config = this.mergeConfig(data);
             }
+            await this.fetchOrders();
+            this.isOffline = false;
+
         } catch (e) {
-            console.error("Config fetch error:", e);
-            this.config = JSON.parse(JSON.stringify(DEFAULT_CONFIG)); // Fallback
+            console.warn("Server connection failed, switching to Offline Mode:", e);
+            this.isOffline = true;
+            this.loadLocalData();
+        }
+        
+        this.applySettings();
+        this.updateConnectionStatus();
+    }
+
+    // --- Local Storage Fallback ---
+    loadLocalData() {
+        if (!localStorage.getItem('warish_config_v7')) {
+            // Migration from v6 or create new
+            let old = localStorage.getItem('warish_config_v6') || localStorage.getItem('warish_config_v5');
+            let base = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+            if(old) { try { let parsed = JSON.parse(old); base = { ...base, ...parsed }; } catch(e){} }
+            localStorage.setItem('warish_config_v7', JSON.stringify(base));
+        }
+        if (!localStorage.getItem('warish_orders_v7')) {
+             localStorage.setItem('warish_orders_v7', JSON.stringify([]));
+        }
+        this.config = JSON.parse(localStorage.getItem('warish_config_v7'));
+        this.orders = JSON.parse(localStorage.getItem('warish_orders_v7'));
+    }
+
+    updateConnectionStatus() {
+        // แสดงสถานะที่มุมจอ (Optional UI feedback)
+        let statusEl = document.getElementById('conn-status');
+        if(!statusEl) {
+            statusEl = document.createElement('div');
+            statusEl.id = 'conn-status';
+            statusEl.style.cssText = "position:fixed; bottom:10px; right:10px; font-size:0.7rem; padding:4px 8px; border-radius:4px; opacity:0.7; z-index:9999;";
+            document.body.appendChild(statusEl);
+        }
+        if(this.isOffline) {
+            statusEl.innerText = "Offline Mode (Local Storage)";
+            statusEl.style.background = "#fee2e2"; statusEl.style.color = "#ef4444";
+        } else {
+            statusEl.innerText = "Online Mode (Database)";
+            statusEl.style.background = "#dcfce7"; statusEl.style.color = "#166534";
         }
     }
 
+    // --- Operations ---
+
     async fetchOrders() {
+        if(this.isOffline) return;
         try {
             const res = await fetch(`${API_URL}/orders`);
             this.orders = await res.json();
-        } catch (e) {
-            console.error("Orders fetch error:", e);
-            this.orders = [];
-        }
+        } catch (e) { console.error("Fetch Orders Error", e); }
     }
 
     mergeConfig(loadedConfig) {
-        // ป้องกันค่าหายกรณีเพิ่มฟีเจอร์ใหม่
         let base = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
         return { ...base, ...loadedConfig };
     }
@@ -88,35 +131,42 @@ class DataManager {
     async saveConfig(newConfig) {
         this.config = newConfig;
         this.applySettings();
-        try {
-            await fetch(`${API_URL}/config`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newConfig)
-            });
-        } catch (e) {
-            alert("บันทึกข้อมูลล้มเหลว ตรวจสอบอินเทอร์เน็ต");
+        
+        if(this.isOffline) {
+            localStorage.setItem('warish_config_v7', JSON.stringify(newConfig));
+            alert("บันทึกข้อมูลลงเครื่องแล้ว (Offline)");
+        } else {
+            try {
+                await fetch(`${API_URL}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newConfig)
+                });
+            } catch (e) {
+                alert("Server Error: บันทึกไม่สำเร็จ");
+            }
         }
     }
 
     getOrders() { return this.orders; }
 
     async addOrder(order) {
-        // เพิ่ม Timestamp และ Status เริ่มต้น
         const newOrder = { ...order, timestamp: new Date().toISOString(), status: 'new' };
+        this.orders.unshift(newOrder); // Update UI Immediately
         
-        // Optimistic Update (อัพเดทหน้าจอทันทีไม่ต้องรอเซิร์ฟเวอร์)
-        this.orders.unshift(newOrder); 
-        
-        try {
-            await fetch(`${API_URL}/orders`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newOrder)
-            });
-        } catch (e) {
-            alert("ส่งออเดอร์ไม่สำเร็จ กรุณาลองใหม่");
-            // Rollback logic could be here
+        if(this.isOffline) {
+            localStorage.setItem('warish_orders_v7', JSON.stringify(this.orders));
+        } else {
+            try {
+                await fetch(`${API_URL}/orders`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newOrder)
+                });
+            } catch (e) {
+                console.error("Add Order Failed", e);
+                // Fallback save to local in emergency?
+            }
         }
     }
 
@@ -124,20 +174,29 @@ class DataManager {
         let order = this.orders.find(o => o.id === id);
         if(order) order.status = status;
 
-        try {
-            await fetch(`${API_URL}/orders/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
-            });
-        } catch (e) { console.error(e); }
+        if(this.isOffline) {
+            localStorage.setItem('warish_orders_v7', JSON.stringify(this.orders));
+        } else {
+            try {
+                await fetch(`${API_URL}/orders/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+            } catch (e) { console.error(e); }
+        }
     }
 
     async deleteOrder(id) {
         this.orders = this.orders.filter(o => o.id !== id);
-        try {
-            await fetch(`${API_URL}/orders/${id}`, { method: 'DELETE' });
-        } catch (e) { console.error(e); }
+        
+        if(this.isOffline) {
+            localStorage.setItem('warish_orders_v7', JSON.stringify(this.orders));
+        } else {
+            try {
+                await fetch(`${API_URL}/orders/${id}`, { method: 'DELETE' });
+            } catch (e) { console.error(e); }
+        }
     }
     
     generateOrderId() {
@@ -155,7 +214,6 @@ class DataManager {
         cfg.orderSettings.lastRunNumber++;
         let run = String(cfg.orderSettings.lastRunNumber).padStart(cfg.orderSettings.runDigits, '0');
         
-        // เราต้อง Save ค่า Running Number กลับไปที่ DB ทันทีเพื่อกันเลขซ้ำ
         this.saveConfig(cfg);
         return `${cfg.orderSettings.prefix}${dateCode}${run}`;
     }
@@ -233,46 +291,64 @@ let stockEditCat = '';
 
 // ================= INIT =================
 document.addEventListener('DOMContentLoaded', async () => {
-    // Show loading state if needed
-    await db.init(); // Wait for data
+    await db.init();
     renderCategoryMenu();
-    
-    // Default dashboard date
     const dateInput = document.getElementById('dash-date-filter');
     if(dateInput) dateInput.valueAsDate = new Date();
 });
 
-// ================= ADMIN AUTH (UPDATED) =================
+// ================= ADMIN AUTH (IMPROVED) =================
 
 async function verifyAdmin() {
     let pin = document.getElementById('admin-pin').value;
+    
+    // Check local fallback first (for offline/instant access)
+    if (pin === ADMIN_PIN_FALLBACK && db.isOffline) {
+        performLogin();
+        return;
+    }
+
     if (pin.length < 4) { alert("PIN สั้นเกินไป"); return; }
     
-    // ส่งไปเช็คที่ Server
     try {
         const res = await fetch(`${API_URL}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ pin: pin })
         });
+        
+        if(!res.ok) throw new Error("Network response was not ok");
+        
         const data = await res.json();
         
         if (data.success) {
-            closeAdminLogin();
-            document.getElementById('customer-view').classList.add('hidden');
-            document.getElementById('admin-panel').classList.remove('hidden');
-            // Re-fetch data to ensure freshness
-            await db.fetchOrders(); 
-            renderAdminDashboard(); 
+            performLogin();
         } else {
-            alert("PIN ไม่ถูกต้อง (รหัส: 210406)");
+            alert("PIN ไม่ถูกต้อง");
         }
     } catch (e) {
-        alert("เกิดข้อผิดพลาดในการเชื่อมต่อ Server");
+        console.warn("Login API failed, checking local fallback pin...", e);
+        // Fallback: ถ้าเน็ตหลุด แต่ PIN ถูก ต้องให้เข้าได้
+        if(pin === ADMIN_PIN_FALLBACK) {
+            alert("ไม่สามารถเชื่อมต่อ Server ได้ - เข้าสู่ระบบด้วยโหมด Offline");
+            db.isOffline = true;
+            db.loadLocalData();
+            db.updateConnectionStatus();
+            performLogin();
+        } else {
+            alert("เกิดข้อผิดพลาดในการเชื่อมต่อ และ PIN ไม่ถูกต้อง");
+        }
     }
 }
 
-// ================= UI FUNCTIONS (REMAIN MOSTLY SAME) =================
+function performLogin() {
+    closeAdminLogin();
+    document.getElementById('customer-view').classList.add('hidden');
+    document.getElementById('admin-panel').classList.remove('hidden');
+    renderAdminDashboard(); 
+}
+
+// ================= UI FUNCTIONS =================
 
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
@@ -561,7 +637,6 @@ function showCopySuccess() {
 
 // ================= ADMIN & UI HELPERS =================
 
-// Admin Login UI
 document.getElementById('admin-login-btn').onclick = () => document.getElementById('admin-login-modal').classList.remove('hidden');
 function closeAdminLogin() { document.getElementById('admin-login-modal').classList.add('hidden'); }
 function logoutAdmin() { exitAdmin(); document.getElementById('admin-pin').value = ''; }
@@ -590,10 +665,6 @@ function switchAdminTab(tab) {
     if(tab === 'general') loadGeneralSettings();
 }
 
-// ... (Dashboard & Admin logic remains similar but uses async db calls where needed) ...
-// เพื่อความกระชับ ส่วน Logic Admin Dashboard ที่เหลือเหมือนเดิม แต่จะทำงานกับ db.getOrders() 
-// ซึ่งถูก fetch มาแล้วตอน verifyAdmin() ผ่าน
-
 function renderAdminDashboard() {
     const dateInput = document.getElementById('dash-date-filter');
     if(!dateInput.value) dateInput.valueAsDate = new Date();
@@ -621,7 +692,6 @@ function renderAdminDashboard() {
              typeStats[typeName] = (typeStats[typeName] || 0) + p;
      
              o.items.forEach(iStr => {
-                 // Check if iStr is string
                  if(typeof iStr === 'string') {
                     let parts = iStr.split(' x');
                     if(parts.length === 2) {
@@ -712,7 +782,7 @@ function switchOrderSubTab(tab) {
 
     const containerId = tab === 'cancelled' ? 'list-cancelled-container' : (tab === 'confirmed' ? 'order-content-confirmed' : 'order-content-new');
     document.getElementById(tab === 'cancelled' ? 'order-content-cancelled' : containerId).classList.remove('hidden'); 
-    renderOrderListHTML(filteredOrders, containerId, tab); // No reverse needed as API sorts DESC
+    renderOrderListHTML(filteredOrders, containerId, tab);
 }
 
 function searchOrder(val) { switchOrderSubTab(currentAdminOrderTab); }
@@ -769,7 +839,6 @@ function renderOrderListHTML(list, containerId, type) {
 function changeOrderStatus(id, newStatus) {
     if(newStatus === 'cancelled' && !confirm("ต้องการยกเลิกออเดอร์นี้?")) return;
     db.updateOrderStatus(id, newStatus);
-    // Local Update for UI responsiveness
     let orders = db.getOrders();
     let o = orders.find(x => x.id === id);
     if(o) o.status = newStatus;

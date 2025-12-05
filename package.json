@@ -1,18 +1,65 @@
 {
-  "name": "warishayday-system",
-  "version": "6.0.0",
-  "description": "Warishayday Ordering System with PostgreSQL",
-  "main": "functions/api.js",
+  "name": "manager-store-system",
+  "version": "1.0.0",
+  "description": "Manager Store System - ระบบจัดการร้านค้าครบวงจร",
+  "main": "manager_store_api.js",
   "scripts": {
-    "start": "node functions/api.js",
-    "build": "echo 'No build step required for functions'"
+    "start": "node manager_store_api.js",
+    "dev": "nodemon manager_store_api.js",
+    "build": "echo 'No build step required for Node.js API'",
+    "test": "jest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "migrate": "psql $DATABASE_URL < database_schema.sql",
+    "db:seed": "node scripts/seed-data.js",
+    "pm2:start": "pm2 start manager_store_api.js --name manager-store-api",
+    "pm2:stop": "pm2 stop manager-store-api",
+    "pm2:restart": "pm2 restart manager-store-api",
+    "pm2:delete": "pm2 delete manager-store-api"
+  },
+  "keywords": [
+    "store-management",
+    "multi-tenant",
+    "api",
+    "nodejs",
+    "express",
+    "postgresql",
+    "ecommerce",
+    "admin-panel",
+    "serial-key",
+    "payment-system"
+  ],
+  "author": "MiniMax Agent",
+  "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "express-rate-limit": "^6.7.0",
+    "helmet": "^6.1.5",
+    "jsonwebtoken": "^9.0.0",
     "pg": "^8.10.0",
-    "serverless-http": "^3.2.0"
-  }
+    "serverless-http": "^3.2.0",
+    "uuid": "^9.0.0",
+    "winston": "^3.8.2"
+  },
+  "devDependencies": {
+    "eslint": "^8.38.0",
+    "jest": "^29.5.0",
+    "nodemon": "^2.0.22",
+    "supertest": "^6.3.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-repo/manager-store-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-repo/manager-store-system/issues"
+  },
+  "homepage": "https://github.com/your-repo/manager-store-system#readme"
 }

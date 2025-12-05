@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#6366f1">
+    <title>WARISHAYDAY Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-default">
+
+    <!-- Background Image Layer -->
+    <div id="custom-bg-layer"></div>
+    <div id="custom-bg-overlay"></div>
+
+    <!-- Notification Toasts Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div id="customer-view">
+        <header id="main-header">
+            <div class="logo-area">
+                <!-- โลโก้จะถูกเปลี่ยนด้วย JS หากมีการอัพโหลด -->
+                <div class="logo-icon" id="main-logo-icon"><i class="fas fa-cubes"></i></div>
+                <img id="main-logo-img" src="" alt="Logo" class="hidden logo-image-custom"> 
+                <div>
+                    <h1 id="shop-name-display">WARISHAYDAY</h1>
+                    <p id="shop-slogan-display">บริการอัพเกรดรวดเร็วทันใจ</p>
+                </div>
+            </div>
+            <div style="display:flex; gap:12px;">
+                <button id="theme-toggle-btn" class="glass-btn" onclick="toggleDarkMode()" title="โหมดมืด/สว่าง">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button id="admin-login-btn" class="glass-btn" title="ผู้ดูแลระบบ">
+                    <i class="fas fa-shield-alt"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="container">
+            <!-- STEP 0: Category Selection (Menu) -->
+            <div id="category-selector" class="fade-in">
+                <div style="text-align:center; margin-bottom:30px; margin-top:10px;">
+                    <h2 class="main-heading" style="font-weight:700; color:var(--text-main);">เลือกบริการ</h2>
+                    <p class="sub-text" style="color:var(--text-muted);">เลือกหมวดหมู่สินค้าที่คุณต้องการอัพเกรด</p>
+                </div>
+                
+                <div id="dynamic-menu-grid" class="menu-grid-2x2">
+                    <!-- Javascript will populate this -->
+                </div>
+
+                <div id="announcement-box" class="announcement-card hidden fade-in" style="margin-top: 25px;">
+                    <div class="ann-icon"><i class="fas fa-bullhorn"></i></div>
+                    <span id="announcement-text" style="line-height:1.5;"></span>
+                </div>
+            </div>
+
+            <!-- CALCULATOR & ORDER SECTION (Wrapper) -->
+            <div id="calculator-section" class="hidden">
+                
+                <!-- STEP 1: Check Limit -->
+                <div id="step-1-limit" class="step-container fade-in">
+                    <div class="calc-header-nav">
+                        <button class="btn-back" onclick="goBackToMenu()">
+                            <i class="fas fa-arrow-left"></i> กลับเมนูหลัก
+                        </button>
+                        <h2 id="selected-category-title">หมวดหมู่</h2> 
+                    </div>
+
+                    <div style="text-align:center; margin-bottom:20px;">
+                         <h2 class="main-heading" style="font-weight:800; color:var(--text-main);">คำนวณลิมิต</h2>
+                         <p class="sub-text" style="color:var(--text-muted);">ตรวจสอบจำนวนสินค้าที่คุณรับได้</p>
+                    </div>
+
+                    <div class="modern-card">
+                        <div class="step-header">
+                            <div class="step-number">1</div>
+                            <span class="step-title">ระบุจำนวนของที่มี</span>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-hashtag"></i>
+                            <input type="number" id="user-limit-input" placeholder="ใส่จำนวนที่มีปัจจุบัน (0-89)" inputmode="numeric" oninput="validateLimitInput(this)">
+                        </div>
+                        <div style="display:flex; gap:12px;">
+                            <button id="btn-check-limit" class="btn-primary disabled" onclick="goToStep2()">
+                                <i class="fas fa-calculator"></i> ตรวจสอบลิมิต
+                            </button>
+                            <button class="btn-secondary-icon" onclick="openHelpModal('limit')" title="วิธีเช็คลิมิต">
+                                <i class="fas fa-play-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Select Type (Shows Limit Here) -->
+                <div id="step-2-type" class="step-container hidden fade-in">
+                    <div class="calc-header-nav">
+                        <button class="btn-back" onclick="switchStep(1)">
+                            <i class="fas fa-arrow-left"></i> ย้อนกลับ
+                        </button>
+                    </div>
+
+                    <!-- Limit Display Area -->
+                    <div class="result-box-compact">
+                        <div class="flex-result">
+                            <div>
+                                <div class="result-label-sm">รับเพิ่มได้อีก</div>
+                                <div class="result-number-md" id="calculated-limit-step2">0</div>
+                            </div>
+                            <div class="divider-vertical"></div>
+                            <div>
+                                <div id="limit-condition-text-step2" class="result-badge">สถานะ</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modern-card">
+                        <div class="step-header">
+                            <div class="step-number">2</div>
+                            <span class="step-title">เลือกรูปแบบการซื้อ</span>
+                        </div>
+                        <div id="dynamic-purchase-buttons" class="grid-options">
+                            <!-- JS populated -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Select Items -->
+                <div id="step-3-items" class="step-container hidden fade-in">
+                    <div class="calc-header-nav">
+                        <button class="btn-back" onclick="switchStep(2)">
+                            <i class="fas fa-arrow-left"></i> ย้อนกลับ
+                        </button>
+                        <!-- Dynamic Limit Countdown Badge -->
+                         <div id="limit-mini-badge" class="limit-floating-badge" style="transition: all 0.3s;">คงเหลือ: 0</div>
+                    </div>
+
+                    <div class="modern-card">
+                        <div class="step-header" style="justify-content:space-between;">
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <div class="step-number">3</div>
+                                <span id="order-type-title" class="step-title">ระบุสินค้า</span>
+                            </div>
+                            <button class="btn-secondary-icon" onclick="openHelpModal('buy')" style="width:40px; height:40px; font-size:1.1rem;">
+                                <i class="fas fa-play-circle"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Item List Input -->
+                        <div id="item-inputs-list" style="margin-bottom:25px;"></div>
+
+                        <div class="price-summary-box">
+                            <div class="row">
+                                <span>รูปแบบ</span> <span id="price-status">-</span>
+                            </div>
+                            <div class="row total">
+                                <span>ยอดสุทธิ</span> <span class="text-primary"><span id="total-price-display">0</span> ฿</span>
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" onclick="goToStep4()">
+                            <i class="fas fa-file-invoice"></i> เพิ่มลงรายการสรุป
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 4: Summary (Cart) -->
+                <div id="step-4-summary" class="step-container hidden fade-in">
+                    <div class="calc-header-nav">
+                        <button class="btn-back" onclick="switchStep(3)">
+                            <i class="fas fa-arrow-left"></i> แก้ไขรายการ
+                        </button>
+                    </div>
+
+                     <div class="modern-card" style="border-top: 4px solid var(--primary);">
+                        <div style="text-align:center; margin-bottom:20px;">
+                             <div class="step-header" style="justify-content:center; margin-bottom:5px;">
+                                <div class="step-number">4</div>
+                                <span class="step-title">สรุปรายการสั่งซื้อ</span>
+                             </div>
+                             <p class="sub-text">ตรวจสอบความถูกต้องก่อนส่ง</p>
+                        </div>
+                        
+                        <div id="cart-preview-area" class="cart-bill"></div>
+                        
+                        <div style="margin-top:25px;">
+                             <button id="btn-confirm-order" class="btn-success" onclick="confirmOrder()">
+                                <i class="fas fa-paper-plane"></i> คัดลอก & ส่งออเดอร์
+                             </button>
+                        </div>
+                     </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- UPDATED: Admin Login Modal (User/Pass) -->
+    <div id="admin-login-modal" class="overlay-backdrop hidden">
+        <div class="modal-window center-content text-center">
+            <div id="login-logo-container">
+                <div class="login-icon" id="login-icon-default"><i class="fas fa-user-shield"></i></div>
+                <!-- Logo will be loaded here dynamically -->
+                <img id="login-image-custom" src="" class="hidden logo-image-custom" style="margin: 0 auto 20px; display:block; max-height: 80px;">
+            </div>
+            
+            <h3 style="color:var(--text-main); margin-bottom:20px; font-weight:700;">เข้าสู่ระบบจัดการ</h3>
+            
+            <div class="form-grid" style="gap:15px; margin-bottom:25px;">
+                <div class="input-group" style="margin-bottom:0;">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="admin-username" placeholder="Username" style="font-weight:bold;">
+                </div>
+                <div class="input-group" style="margin-bottom:0;">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="admin-password" placeholder="Password" style="font-weight:bold;">
+                </div>
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button onclick="verifyAdmin()" class="btn-primary">เข้าสู่ระบบ</button>
+                <button onclick="closeAdminLogin()" class="btn-back" style="justify-content:center; width:100%; border:1px solid var(--border-color); padding:12px;">ยกเลิก</button>
+            </div>
+
+            <!-- New Register Button -->
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed var(--border-color);">
+                <button onclick="openRegisterModal()" class="btn-register-glow">
+                    <i class="fas fa-sparkles"></i> สมัครใช้งานระบบ (เริ่มต้น 29฿)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Registration Modal -->
+    <div id="register-modal" class="overlay-backdrop hidden" style="z-index: 2000; align-items: flex-start; padding-top: 30px;">
+        <div class="modal-window" style="max-width: 650px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-plus"></i> สมัครสมาชิกใหม่</h3>
+                <button onclick="closeRegisterModal()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="register-content-scroll" style="padding: 20px;">
+                <!-- Section 1: Shop Info -->
+                <h5 class="section-title"><i class="fas fa-store"></i> ข้อมูลร้านค้า</h5>
+                <div class="form-grid cols-2">
+                    <div>
+                        <label class="form-label">ชื่อร้าน <span class="text-danger">*</span></label>
+                        <input type="text" id="reg-shop-name" class="form-control" placeholder="ชื่อร้านของคุณ">
+                    </div>
+                    <div>
+                        <label class="form-label">อายุร้าน</label>
+                        <div style="display: flex; gap: 5px;">
+                            <select id="reg-age-year" class="form-control">
+                                <option value="0">0 ปี</option>
+                                <option value="1">1 ปี</option>
+                                <option value="2">2 ปี</option>
+                                <option value="3">3 ปี+</option>
+                            </select>
+                            <select id="reg-age-month" class="form-control">
+                                <option value="0">0 เดือน</option>
+                                <option value="1">1 เดือน</option>
+                                <option value="3">3 เดือน</option>
+                                <option value="6">6 เดือน+</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label class="form-label">ลิงก์ร้านค้าหลัก <span class="text-danger">*</span></label>
+                    <input type="text" id="reg-shop-link" class="form-control" placeholder="https://...">
+                </div>
+
+                <!-- Section 2: Account -->
+                <h5 class="section-title" style="margin-top: 25px;"><i class="fas fa-user-lock"></i> บัญชีผู้ใช้</h5>
+                <div class="form-grid cols-2">
+                    <div>
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" id="reg-username" class="form-control" placeholder="ตั้งชื่อผู้ใช้">
+                    </div>
+                    <div>
+                        <!-- Spacer -->
+                    </div>
+                    <div>
+                        <label class="form-label">Password <span class="text-danger">*</span></label>
+                        <input type="password" id="reg-password" class="form-control" placeholder="รหัสผ่าน (ขั้นต่ำ 8 ตัว)">
+                    </div>
+                    <div>
+                        <label class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                        <input type="password" id="reg-confirm-password" class="form-control" placeholder="ยืนยันรหัสผ่าน">
+                    </div>
+                </div>
+
+                <!-- Section 3: Contact -->
+                <h5 class="section-title" style="margin-top: 25px;"><i class="fas fa-address-book"></i> ช่องทางติดต่อ (ระบุอย่างน้อย 1 ช่องทาง)</h5>
+                <div class="form-grid cols-3">
+                    <div>
+                        <div class="input-with-icon">
+                            <i class="fab fa-line" style="color: #06c755;"></i>
+                            <input type="text" id="reg-contact-line" class="form-control pl-icon" placeholder="LINE ID">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="input-with-icon">
+                            <i class="fab fa-facebook" style="color: #1877f2;"></i>
+                            <input type="text" id="reg-contact-fb" class="form-control pl-icon" placeholder="Facebook">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="input-with-icon">
+                            <i class="fas fa-phone" style="color: var(--text-muted);"></i>
+                            <input type="text" id="reg-contact-phone" class="form-control pl-icon" placeholder="เบอร์โทร">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Packages -->
+                <h5 class="section-title" style="margin-top: 25px;"><i class="fas fa-box-open"></i> เลือกแพ็คเกจ</h5>
+                
+                <div class="package-selector">
+                    <!-- Standard Package -->
+                    <label class="package-card standard">
+                        <input type="radio" name="package_select" value="standard" checked>
+                        <div class="pkg-content">
+                            <div class="pkg-header">
+                                <span class="pkg-name">Standard (เริ่มต้น)</span>
+                                <span class="pkg-price">29฿ <small>/เดือน</small></span>
+                            </div>
+                            <div class="pkg-desc">เหมาะสำหรับผู้เริ่มต้น เน้นใช้งานฟังก์ชันพื้นฐาน</div>
+                            <ul class="pkg-features">
+                                <li class="ok"><i class="fas fa-check"></i> ระบบคำนวณลิมิต/ราคา</li>
+                                <li class="ok"><i class="fas fa-check"></i> จัดการออเดอร์/สต็อก</li>
+                                <li class="no"><i class="fas fa-times"></i> Dashboard สถิติ</li>
+                                <li class="no"><i class="fas fa-times"></i> ปรับแต่งธีมร้าน</li>
+                            </ul>
+                        </div>
+                        <div class="pkg-check-icon"><i class="fas fa-check-circle"></i></div>
+                    </label>
+
+                    <!-- Premium Package -->
+                    <label class="package-card premium">
+                        <input type="radio" name="package_select" value="premium">
+                        <div class="pkg-content">
+                            <div class="pkg-badge">ขายดี!</div>
+                            <div class="pkg-header">
+                                <span class="pkg-name">Premium (โปร)</span>
+                                <span class="pkg-price">59฿ <small>/เดือน</small></span>
+                            </div>
+                            <div class="pkg-desc">ปลดล็อคทุกฟีเจอร์ เพื่อการวิเคราะห์และสร้างแบรนด์</div>
+                            <ul class="pkg-features">
+                                <li class="ok"><i class="fas fa-check"></i> ฟีเจอร์ Standard ทั้งหมด</li>
+                                <li class="ok"><i class="fas fa-check"></i> Dashboard วิเคราะห์ยอดขาย</li>
+                                <li class="ok"><i class="fas fa-check"></i> ปรับแต่งธีม/โลโก้/พื้นหลัง</li>
+                                <li class="ok"><i class="fas fa-check"></i> ระบบ Tracking ลูกค้า</li>
+                            </ul>
+                        </div>
+                        <div class="pkg-check-icon"><i class="fas fa-check-circle"></i></div>
+                    </label>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <button onclick="submitRegistration()" class="btn-success" style="font-size: 1.1rem;">
+                        ยืนยันการสมัครสมาชิก
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Structure -->
+    <div id="admin-panel" class="admin-layout hidden">
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header" style="padding:20px;">
+                <div class="brand-admin" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <i class="fas fa-user-cog"></i> Admin Panel
+                </div>
+            </div>
+            <nav class="sidebar-menu">
+                <button class="menu-link active" onclick="switchAdminTab('dashboard')">
+                    <i class="fas fa-chart-pie"></i> ภาพรวม (Dashboard)
+                </button>
+                <button class="menu-link" onclick="switchAdminTab('orders')">
+                    <i class="fas fa-receipt"></i> รายการสั่งซื้อ (Orders)
+                </button>
+                <button class="menu-link" onclick="switchAdminTab('products')">
+                    <i class="fas fa-boxes"></i> สินค้า & หมวดหมู่
+                </button>
+                <button class="menu-link" onclick="switchAdminTab('prices')">
+                    <i class="fas fa-tags"></i> ตั้งราคา (Prices)
+                </button>
+                <button class="menu-link" onclick="switchAdminTab('market')">
+                    <i class="fas fa-share-alt"></i> Market Share
+                </button>
+                <button class="menu-link" onclick="switchAdminTab('general')">
+                    <i class="fas fa-sliders-h"></i> ตั้งค่าระบบ (Settings)
+                </button>
+                <!-- NEW: Manager Store Menu (Super Admin Only) -->
+                <div class="menu-divider" id="super-admin-divider"><span>SUPER ADMIN</span></div>
+                <button class="menu-link" onclick="switchAdminTab('manager-store')" id="menu-manager-store">
+                    <i class="fas fa-store-alt"></i> Manager Store
+                </button>
+            </nav>
+            <div class="sidebar-footer">
+                <button onclick="logoutAdmin()" class="btn-logout"><i class="fas fa-power-off"></i> ออกจากระบบ</button>
+            </div>
+        </aside>
+
+        <div class="admin-content-wrapper">
+            <header class="admin-topbar">
+                <div style="display:flex; align-items:center; gap:15px;">
+                    <button class="mobile-toggle glass-btn" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <h2 class="page-title" id="admin-page-title">Dashboard</h2>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <button class="btn-back-home" onclick="exitAdmin()">
+                        <i class="fas fa-home"></i> กลับหน้าร้าน
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dashboard Tab -->
+            <div id="tab-dashboard" class="admin-tab-content fade-in">
+                <!-- Date Filter Row -->
+                <div class="filter-row" style="margin-bottom: 20px; display:flex; justify-content:flex-end;">
+                     <div style="display:flex; align-items:center; gap:10px; background:var(--bg-card); padding:8px 15px; border-radius:30px; border:1px solid var(--border-color); box-shadow:var(--shadow-sm);">
+                        <i class="fas fa-calendar-alt" style="color:var(--primary);"></i>
+                        <span style="font-size:0.9rem; font-weight:600;">วันที่:</span>
+                        <input type="date" id="dash-date-filter" class="date-picker-input" onchange="renderAdminDashboard()">
+                     </div>
+                </div>
+
+                <!-- Row 1: Stats -->
+                 <div class="dashboard-force-row-3">
+                    <div class="stat-card blue">
+                        <div class="stat-icon"><i class="fas fa-calendar-day"></i></div>
+                        <div class="stat-info">
+                            <h4>วันนี้</h4>
+                            <div class="stat-val" id="dash-sales-today">0 ฿</div>
+                        </div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div class="stat-info">
+                            <h4>เดือนนี้</h4>
+                            <div class="stat-val" id="dash-sales-month">0 ฿</div>
+                        </div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-icon"><i class="fas fa-calendar"></i></div>
+                        <div class="stat-info">
+                            <h4>ปีนี้</h4>
+                            <div class="stat-val" id="dash-sales-year">0 ฿</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="dashboard-force-row-2">
+                    <div class="admin-card">
+                        <div class="card-head"><h4><i class="fas fa-chart-pie"></i> ยอดขายตามหมวดหมู่</h4></div>
+                        <div class="chart-side-by-side">
+                            <div class="chart-half-container"><canvas id="chart-category"></canvas></div>
+                            <div class="list-half-container custom-scrollbar"><div id="summary-list-category" class="chart-legend-table"></div></div>
+                        </div>
+                    </div>
+                    <div class="admin-card">
+                        <div class="card-head"><h4><i class="fas fa-chart-bar"></i> ยอดขายตามรูปแบบ</h4></div>
+                        <div class="chart-side-by-side">
+                            <div class="chart-half-container"><canvas id="chart-type"></canvas></div>
+                            <div class="chart-half-container"><canvas id="chart-type-bar"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="dashboard-force-row-2">
+                    <div class="admin-card">
+                         <div class="card-head" style="flex-wrap: wrap; gap:10px;">
+                            <h4><i class="fas fa-chart-line"></i> สรุปยอดขายรวม</h4>
+                            <div class="timeline-controls" style="margin-left:auto; display:flex; gap:5px;">
+                                <button class="action-btn-sm active" onclick="updateTimelineView('day')" id="btn-tl-day">วัน</button>
+                                <button class="action-btn-sm" onclick="updateTimelineView('month')" id="btn-tl-month">เดือน</button>
+                                <button class="action-btn-sm" onclick="updateTimelineView('year')" id="btn-tl-year">ปี</button>
+                            </div>
+                         </div>
+                         <div class="chart-wrapper-flex column">
+                            <div class="chart-container large"><canvas id="chart-summary"></canvas></div>
+                         </div>
+                    </div>
+                    <div class="admin-card">
+                         <div class="card-head"><h4><i class="fas fa-box"></i> ยอดขายรายสินค้า (Top 10)</h4></div>
+                         <div style="flex:1; width:100%; min-height: 250px; position: relative;">
+                             <canvas id="chart-items" style="width:100%; height:100%;"></canvas>
+                         </div>
+                    </div>
+                </div>
+
+                <!-- Row 4 -->
+                <div class="dashboard-force-row-2">
+                    <div class="admin-card">
+                        <div class="card-head"><h4><i class="fas fa-share-alt"></i> ช่องทางการขาย (Market Share)</h4></div>
+                        <div class="chart-side-by-side">
+                            <div class="chart-half-container"><canvas id="chart-source"></canvas></div>
+                             <div class="list-half-container custom-scrollbar"><div id="summary-list-source" class="chart-legend-table"></div></div>
+                        </div>
+                    </div>
+                    <!-- REMOVED: Placeholder card for additional stats -->
+                </div>
+            </div>
+
+            <!-- Orders Tab -->
+            <div id="tab-orders" class="admin-tab-content hidden fade-in">
+                 <div class="admin-card" style="padding: 15px;">
+                     <div class="order-search-box">
+                         <i class="fas fa-search"></i>
+                         <input type="text" id="order-search-input" placeholder="ค้นหา Order ID..." oninput="searchOrder(this.value)">
+                     </div>
+                     <div class="order-tabs-nav">
+                         <button class="order-tab-btn active" onclick="switchOrderSubTab('new')">
+                            <i class="fas fa-star"></i> ออเดอร์ใหม่ <span id="badge-new" class="tab-badge">0</span>
+                         </button>
+                         <button class="order-tab-btn" onclick="switchOrderSubTab('confirmed')">
+                            <i class="fas fa-check-circle"></i> คอนเฟิร์ม <span id="badge-confirmed" class="tab-badge">0</span>
+                         </button>
+                         <button class="order-tab-btn" onclick="switchOrderSubTab('cancelled')">
+                            <i class="fas fa-times-circle"></i> ยกเลิก <span id="badge-cancelled" class="tab-badge">0</span>
+                         </button>
+                     </div>
+                     <div id="order-content-new" class="order-sub-content"></div>
+                     <div id="order-content-confirmed" class="order-sub-content hidden">
+                        <div class="text-right" style="margin-bottom:10px; text-align: right;">
+                             <button class="btn-text-danger" onclick="clearAllConfirmedOrders()" style="color:var(--danger); border:none; background:none; cursor:pointer; font-weight:600;">
+                                 <i class="fas fa-trash-alt"></i> ล้างออเดอร์ทั้งหมด
+                             </button>
+                         </div>
+                        <div id="list-confirmed-container"></div>
+                     </div>
+                     <div id="order-content-cancelled" class="order-sub-content hidden">
+                         <div class="text-right" style="margin-bottom:10px; text-align: right;">
+                             <button class="btn-text-danger" onclick="clearAllCancelledOrders()" style="color:var(--danger); border:none; background:none; cursor:pointer; font-weight:600;">
+                                 <i class="fas fa-trash-alt"></i> ล้างออเดอร์ทั้งหมด
+                             </button>
+                         </div>
+                         <div id="list-cancelled-container"></div>
+                     </div>
+                 </div>
+            </div>
+
+            <!-- Products Tab -->
+            <div id="tab-products" class="admin-tab-content hidden fade-in">
+                <div class="admin-card">
+                    <div class="card-head" style="flex-wrap:wrap; gap:10px;">
+                        <h4>จัดการสินค้า & หมวดหมู่</h4>
+                        <div style="display:flex; gap:10px;">
+                            <button class="action-btn-sm" onclick="openAddCategoryModal()" style="width:auto; padding:0 15px; background:var(--bg-input); color:var(--text-main);">
+                                <i class="fas fa-folder-plus"></i> เพิ่มหมวดหมู่
+                            </button>
+                        </div>
+                    </div>
+                    <div class="stock-tabs" id="stock-category-tabs"></div>
+                    <div id="stock-manage-area" class="stock-grid-layout"></div>
+                    <button class="btn-primary" style="margin-top:20px; width:auto;" onclick="saveStockChanges()">
+                        <i class="fas fa-save"></i> บันทึกข้อมูลสินค้าทั้งหมด
+                    </button>
+                    <div style="margin-top:15px; font-size:0.9rem; color:#ef4444; cursor:pointer;" onclick="deleteCurrentCategory()">
+                        <i class="fas fa-trash-alt"></i> ลบหมวดหมู่นี้
+                    </div>
+                </div>
+            </div>
+
+             <!-- Prices Tab -->
+             <div id="tab-prices" class="admin-tab-content hidden fade-in">
+                <div class="admin-card">
+                    <div class="card-head"><h4>ตั้งค่าราคา (Price Configuration)</h4></div>
+                    <div class="alert-box" style="background:var(--bg-input); color:var(--text-muted); padding:15px; border-radius:8px; margin-bottom:20px; border:1px solid var(--border-color);">
+                        <i class="fas fa-info-circle"></i> <b>หลักการคิดเงิน:</b> ระบบจะคำนวณราคาตามถาด (1 ถาด = 10 ชิ้น) เป็นหลัก หากเกินราคาเหมาจะใช้ราคาเหมา
+                    </div>
+                    <div class="price-config-grid" id="dynamic-price-config"></div>
+                    <button onclick="savePriceSettings()" class="btn-primary" style="margin-top:20px;">บันทึกราคา</button>
+                </div>
+             </div>
+            
+            <!-- Market Share Tab -->
+            <div id="tab-market" class="admin-tab-content hidden fade-in">
+                <div class="admin-card">
+                    <div class="card-head">
+                        <h4><i class="fas fa-link"></i> สร้างลิงก์ติดตาม (Tracking Link Generator)</h4>
+                    </div>
+                    <div class="alert-box" style="background:rgba(99, 102, 241, 0.1); color:var(--primary); padding:15px; border-radius:8px; margin-bottom:25px; border:1px solid var(--primary);">
+                        <i class="fas fa-info-circle"></i> นำลิงก์เหล่านี้ไปแปะในโพสต์ของคุณ ระบบจะเก็บสถิติอัตโนมัติเมื่อลูกค้ากดสั่งซื้อ
+                    </div>
+                    <div style="margin-bottom:20px;">
+                         <label class="form-label">ลิงก์ร้านค้าของคุณ (Base URL)</label>
+                         <input type="text" id="market-base-url" class="form-control" readonly style="background:var(--bg-input); color:var(--text-muted);">
+                    </div>
+                    <div class="market-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap:20px;">
+                        <div class="option-card" style="align-items:flex-start; text-align:left; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <i class="fab fa-line" style="font-size:1.5rem; color:#06c755;"></i>
+                                <span style="font-weight:bold;">LINE OA</span>
+                            </div>
+                            <small class="text-muted">สำหรับ Broadcast หรือ Rich Menu</small>
+                            <button class="action-btn-sm" onclick="copyTrackingLink('LINE')" style="width:100%; margin-top:5px; background:var(--primary); color:white;"><i class="fas fa-copy"></i> คัดลอกลิงก์</button>
+                        </div>
+                         <div class="option-card" style="align-items:flex-start; text-align:left; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <i class="fab fa-facebook-messenger" style="font-size:1.5rem; color:#0084ff;"></i>
+                                <span style="font-weight:bold;">Messenger</span>
+                            </div>
+                            <small class="text-muted">สำหรับตอบแชทลูกค้า</small>
+                            <button class="action-btn-sm" onclick="copyTrackingLink('Messenger')" style="width:100%; margin-top:5px; background:var(--primary); color:white;"><i class="fas fa-copy"></i> คัดลอกลิงก์</button>
+                        </div>
+                         <div class="option-card" style="align-items:flex-start; text-align:left; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <i class="fab fa-facebook" style="font-size:1.5rem; color:#1877f2;"></i>
+                                <span style="font-weight:bold;">Facebook Page</span>
+                            </div>
+                            <small class="text-muted">สำหรับโพสต์หน้าเพจ</small>
+                            <button class="action-btn-sm" onclick="copyTrackingLink('FacebookPage')" style="width:100%; margin-top:5px; background:var(--primary); color:white;"><i class="fas fa-copy"></i> คัดลอกลิงก์</button>
+                        </div>
+                         <div class="option-card" style="align-items:flex-start; text-align:left; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <i class="fab fa-youtube" style="font-size:1.5rem; color:#ff0000;"></i>
+                                <span style="font-weight:bold;">YouTube</span>
+                            </div>
+                            <small class="text-muted">สำหรับคำอธิบายคลิป</small>
+                            <button class="action-btn-sm" onclick="copyTrackingLink('YouTube')" style="width:100%; margin-top:5px; background:var(--primary); color:white;"><i class="fas fa-copy"></i> คัดลอกลิงก์</button>
+                        </div>
+                         <div class="option-card" style="align-items:flex-start; text-align:left; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <i class="fab fa-tiktok" style="font-size:1.5rem; color:#000;"></i>
+                                <span style="font-weight:bold;">TikTok</span>
+                            </div>
+                            <small class="text-muted">สำหรับลิงก์หน้าโปรไฟล์</small>
+                            <button class="action-btn-sm" onclick="copyTrackingLink('TIKTOK')" style="width:100%; margin-top:5px; background:var(--primary); color:white;"><i class="fas fa-copy"></i> คัดลอกลิงก์</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- UPDATED: General Settings Tab (Modular) -->
+             <div id="tab-general" class="admin-tab-content hidden fade-in">
+                 
+                <!-- NEW: Package Settings -->
+                <div class="admin-card" style="border-left: 5px solid var(--warning);">
+                    <div class="card-head">
+                        <h4><i class="fas fa-gem"></i> ตั้งค่าราคาแพ็คเกจรายเดือน</h4>
+                        <button onclick="savePackageSettings()" class="action-btn-sm" style="width:auto; padding:0 15px; background:var(--success); color:white; border:none;">
+                            <i class="fas fa-save"></i> บันทึกแพ็คเกจ
+                        </button>
+                    </div>
+                    <div class="form-grid cols-2">
+                        <!-- Standard Config -->
+                        <div style="background:var(--bg-input); padding:15px; border-radius:8px; border:1px solid var(--border-color);">
+                            <h6 style="font-weight:700; margin-bottom:10px; color:var(--text-main);">Standard Package (เริ่มต้น)</h6>
+                            <div class="input-group" style="margin-bottom:10px;">
+                                <span style="position:absolute; left:15px; top:50%; transform:translateY(-50%); font-weight:bold;">฿</span>
+                                <input type="number" id="cfg-pkg-standard-price" class="form-control" style="padding-left:35px;" value="29">
+                            </div>
+                            <textarea id="cfg-pkg-standard-desc" class="form-control" rows="2" placeholder="คำอธิบายแพ็คเกจ...">เหมาะสำหรับผู้เริ่มต้น เน้นใช้งานฟังก์ชันพื้นฐาน</textarea>
+                        </div>
+                        
+                        <!-- Premium Config -->
+                        <div style="background:linear-gradient(135deg, var(--bg-input), rgba(99, 102, 241, 0.1)); padding:15px; border-radius:8px; border:1px solid var(--primary);">
+                            <h6 style="font-weight:700; margin-bottom:10px; color:var(--primary);">Premium Package (โปร)</h6>
+                            <div class="input-group" style="margin-bottom:10px;">
+                                <span style="position:absolute; left:15px; top:50%; transform:translateY(-50%); font-weight:bold; color:var(--primary);">฿</span>
+                                <input type="number" id="cfg-pkg-premium-price" class="form-control" style="padding-left:35px; border-color:var(--primary);" value="59">
+                            </div>
+                            <textarea id="cfg-pkg-premium-desc" class="form-control" rows="2" placeholder="คำอธิบายแพ็คเกจ...">ปลดล็อคทุกฟีเจอร์ เพื่อการวิเคราะห์และสร้างแบรนด์</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- Section 1: General Info -->
+                 <div class="admin-card">
+                     <div class="card-head">
+                        <h4><i class="fas fa-store"></i> ข้อมูลร้านค้าทั่วไป</h4>
+                        <button onclick="saveGeneralSettings()" class="action-btn-sm" style="width:auto; padding:0 15px; background:var(--success); color:white; border:none;">
+                            <i class="fas fa-save"></i> บันทึกข้อมูล
+                        </button>
+                    </div>
+                     <div class="form-grid cols-2">
+                        <div>
+                            <label class="form-label">ชื่อร้านค้า</label>
+                            <input type="text" id="edit-shop-name" class="form-control" placeholder="ชื่อร้าน...">
+                        </div>
+                        <div>
+                            <label class="form-label">สโลแกน</label>
+                            <input type="text" id="edit-shop-slogan" class="form-control" placeholder="สโลแกน...">
+                        </div>
+                     </div>
+                     <div class="form-grid cols-2" style="margin-top:15px;">
+                         <div>
+                            <label class="form-label">โลโก้ร้าน (PNG/JPG)</label>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <div id="preview-logo-settings" style="width:50px; height:50px; background:var(--bg-input); border-radius:10px; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                                    <i class="fas fa-image" style="color:#ccc;"></i>
+                                </div>
+                                <div style="flex:1;">
+                                    <input type="file" id="file-logo-upload" accept="image/*" class="form-control">
+                                    <input type="hidden" id="edit-logo-url">
+                                </div>
+                            </div>
+                            <button class="btn-text-danger" onclick="clearLogo()" style="font-size:0.8rem; margin-top:5px; border:none; background:none; cursor:pointer; color:var(--danger);">รีเซ็ตโลโก้เดิม</button>
+                         </div>
+                         <div>
+                            <label class="form-label">ประกาศหน้าเว็บ</label>
+                            <textarea id="edit-announcement" class="form-control" rows="2" placeholder="ข้อความประกาศ..."></textarea>
+                         </div>
+                     </div>
+                     <div style="margin-top:15px;">
+                         <label class="form-label">ธีมร้านค้า</label>
+                         <button class="btn-secondary-icon" onclick="openThemeSelector()" style="width:100%; font-size:1rem; gap:10px; border-radius:8px;">
+                            <i class="fas fa-palette"></i> เลือกสีธีม / ธีมระบบ
+                        </button>
+                     </div>
+                 </div>
+
+                 <!-- NEW: Password Settings -->
+                 <div class="admin-card">
+                    <div class="card-head">
+                        <h4><i class="fas fa-key"></i> เปลี่ยนรหัสผ่านผู้ดูแล</h4>
+                        <button onclick="saveAdminPassword()" class="action-btn-sm" style="width:auto; padding:0 15px; background:var(--success); color:white; border:none;">
+                            <i class="fas fa-save"></i> บันทึกรหัสผ่าน
+                        </button>
+                    </div>
+                    <div class="form-grid cols-2">
+                       <div>
+                           <label class="form-label">Username ใหม่</label>
+                           <input type="text" id="edit-admin-username" class="form-control" placeholder="Admin Username">
+                       </div>
+                       <div>
+                           <label class="form-label">Password ใหม่</label>
+                           <input type="text" id="edit-admin-password" class="form-control" placeholder="Admin Password">
+                       </div>
+                    </div>
+                    <div style="font-size:0.85rem; color:var(--text-muted); margin-top:10px;">
+                        * รหัสผ่านเดิมคือ: admin / admin (หากยังไม่เคยเปลี่ยน)
+                    </div>
+                </div>
+
+                 <!-- Section 2: Font Size -->
+                 <div class="admin-card">
+                    <div class="card-head">
+                        <h4><i class="fas fa-font"></i> ปรับขนาดตัวอักษร</h4>
+                        <button onclick="saveFontSettings()" class="action-btn-sm" style="width:auto; padding:0 15px; background:var(--success); color:white; border:none;">
+                            <i class="fas fa-save"></i> บันทึกฟอนต์
+                        </button>
+                    </div>
+                    <div class="form-grid cols-2">
+                        <div>
+                            <label class="form-label">หัวข้อ (Heading Size)</label>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:0.8rem;">เล็ก</span>
+                                <input type="range" id="edit-font-heading" min="10" max="60" value="20" oninput="previewFonts()">
+                                <span style="font-size:0.8rem;">ใหญ่</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label">เนื้อหา (Body Size)</label>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:0.8rem;">เล็ก</span>
+                                <input type="range" id="edit-font-body" min="8" max="40" value="16" oninput="previewFonts()">
+                                <span style="font-size:0.8rem;">ใหญ่</span>
+                            </div>
+                        </div>
+                    </div>
+                 </div>
+
+                 <!-- Section 3: Background -->
+                 <div class="admin-card">
+                    <div class="card-head">
+                        <h4><i class="fas fa-image"></i> ปรับแต่งพื้นหลัง</h4>
+                        <button onclick="saveBackgroundSettings()" class="action-btn-sm" style="width:auto; padding:0 15px; background:var(--success); color:white; border:none;">
+                            <i class="fas fa-save"></i> บันทึกพื้นหลัง
+                        </button>
+                    </div>
+                    <div class="form-grid cols-2">
+                        <div>
+                            <label class="form-label">รูปภาพพื้นหลัง</label>
+                            <input type="file" id="file-bg-image" accept="image/*" class="form-control">
+                            <input type="hidden" id="edit-bg-url">
+                            <button class="btn-text-danger" onclick="clearBackgroundImage()" style="margin-top:10px; font-size:0.9rem; border:none; background:none; cursor:pointer; color:var(--danger);">ลบรูปภาพ</button>
+                        </div>
+                        <div>
+                            <label class="form-label">ความคมชัดพื้นหลัง (Overlay)</label>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="font-size:0.8rem;">สว่าง</span>
+                                <input type="range" id="edit-bg-overlay" min="0" max="95" value="50" oninput="previewBackgroundOverlay()">
+                                <span style="font-size:0.8rem;">มืด</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="opacity-control-box" style="margin-top:15px; margin-bottom:0;">
+                        <label class="form-label">ความโปร่งแสงของ UI Admin</label>
+                        <input type="range" id="edit-color-intensity" min="0" max="100" value="50" oninput="previewVisuals()" style="width:100%;">
+                    </div>
+                 </div>
+
+                 <!-- Section 4: Help Content -->
+                 <div class="admin-card">
+                     <div class="card-head">
+                        <h4><i class="fas fa-video"></i> วิดีโอคู่มือ (Help Content)</h4>
+                        <button onclick="saveHelpSettings()" class="action-btn-sm" style="width:auto; padding:0 15px; background:var(--success); color:white; border:none;">
+                            <i class="fas fa-save"></i> บันทึกวิดีโอ
+                        </button>
+                    </div>
+                     <div class="form-grid cols-2">
+                        <div style="background:var(--bg-input); padding:15px; border-radius:8px; border:1px solid var(--border-color);">
+                            <h6 style="font-weight:700; margin-bottom:10px;">วิธีเช็คลิมิต</h6>
+                            <input type="file" id="file-video-limit" accept="video/*" class="form-control" style="margin-bottom:5px;">
+                            <input type="text" id="edit-video-limit" class="form-control" placeholder="หรือ URL..." style="margin-bottom:10px;">
+                            <textarea id="edit-desc-limit" class="form-control" rows="2" placeholder="คำอธิบาย..."></textarea>
+                        </div>
+                        <div style="background:var(--bg-input); padding:15px; border-radius:8px; border:1px solid var(--border-color);">
+                            <h6 style="font-weight:700; margin-bottom:10px;">วิธีกดสินค้า</h6>
+                            <input type="file" id="file-video-buy" accept="video/*" class="form-control" style="margin-bottom:5px;">
+                            <input type="text" id="edit-video-buy" class="form-control" placeholder="หรือ URL..." style="margin-bottom:10px;">
+                            <textarea id="edit-desc-buy" class="form-control" rows="2" placeholder="คำอธิบาย..."></textarea>
+                        </div>
+                     </div>
+                 </div>
+             </div>
+
+            <!-- NEW: Manager Store Tab (Super Admin) -->
+            <div id="tab-manager-store" class="admin-tab-content hidden fade-in">
+                <!-- Sub Navigation for Manager Store -->
+                <div class="manager-store-nav">
+                    <button class="ms-nav-btn active" onclick="switchManagerStoreTab('pending-stores')">
+                        <i class="fas fa-user-clock"></i> ร้านค้าที่สมัคร
+                        <span class="ms-badge" id="badge-pending-stores">0</span>
+                    </button>
+                    <button class="ms-nav-btn" onclick="switchManagerStoreTab('serial-keys')">
+                        <i class="fas fa-key"></i> Serial Key
+                    </button>
+                    <button class="ms-nav-btn" onclick="switchManagerStoreTab('open-store')">
+                        <i class="fas fa-store"></i> เปิดร้านค้าใหม่
+                        <span class="ms-badge" id="badge-open-store">0</span>
+                    </button>
+                    <button class="ms-nav-btn" onclick="switchManagerStoreTab('monitor-stores')">
+                        <i class="fas fa-desktop"></i> ติดตามการทำงาน
+                    </button>
+                    <button class="ms-nav-btn" onclick="switchManagerStoreTab('payment-stores')">
+                        <i class="fas fa-credit-card"></i> Payment Stores
+                    </button>
+                    <button class="ms-nav-btn" onclick="switchManagerStoreTab('super-dashboard')">
+                        <i class="fas fa-chart-line"></i> Dashboard
+                    </button>
+                </div>
+
+                <!-- Sub Tab: ร้านค้าที่สมัครเข้ามา -->
+                <div id="ms-pending-stores" class="ms-sub-content">
+                    <div class="admin-card">
+                        <div class="card-head">
+                            <h4><i class="fas fa-user-clock"></i> ร้านค้าที่สมัครเข้ามา</h4>
+                        </div>
+                        <div id="pending-stores-list" class="stores-list-container">
+                            <!-- Dynamic content -->
+                        </div>
+
+                        <!-- History Section -->
+                        <div style="margin-top: 30px; border-top: 2px solid var(--border-color); padding-top: 20px;">
+                            <h5 style="margin-bottom: 15px; color: var(--text-muted);"><i class="fas fa-history"></i> ประวัติการสมัคร</h5>
+                            <div id="registration-history-list" class="stores-list-container">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub Tab: Serial Key Management -->
+                <div id="ms-serial-keys" class="ms-sub-content hidden">
+                    <div class="admin-card">
+                        <div class="card-head">
+                            <h4><i class="fas fa-key"></i> สร้าง Serial Key</h4>
+                        </div>
+
+                        <!-- Serial Key Generator -->
+                        <div class="serial-generator-box">
+                            <div class="form-grid cols-2">
+                                <div>
+                                    <label class="form-label">จำนวนหลัก Serial Key</label>
+                                    <div class="range-with-value">
+                                        <input type="range" id="serial-key-length" min="10" max="20" value="16" oninput="updateSerialLengthDisplay()">
+                                        <span id="serial-length-display" class="range-value">16</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label">เลือกระยะเวลา</label>
+                                    <select id="serial-key-duration" class="form-control">
+                                        <option value="15d">15 วัน (ทดลองใช้ฟรี)</option>
+                                        <option value="1m">1 เดือน</option>
+                                        <option value="3m">3 เดือน</option>
+                                        <option value="5m">5 เดือน</option>
+                                        <option value="1y">1 ปี</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="margin-top: 20px;">
+                                <button class="btn-primary" onclick="generateSerialKey()" style="max-width: 300px;">
+                                    <i class="fas fa-random"></i> สร้าง Serial Key
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Generated Serial Keys List -->
+                        <div style="margin-top: 30px;">
+                            <h5 style="margin-bottom: 15px;"><i class="fas fa-list"></i> Serial Keys ที่สร้างไว้</h5>
+                            <div id="serial-keys-list" class="serial-keys-grid">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stores Waiting for Serial Key -->
+                    <div class="admin-card" style="margin-top: 20px;">
+                        <div class="card-head">
+                            <h4><i class="fas fa-hourglass-half"></i> ร้านค้ารอใส่ Serial Key</h4>
+                        </div>
+                        <div id="stores-waiting-serial" class="stores-list-container">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub Tab: เปิดร้านค้าใหม่ -->
+                <div id="ms-open-store" class="ms-sub-content hidden">
+                    <div class="admin-card">
+                        <div class="card-head">
+                            <h4><i class="fas fa-store"></i> ร้านค้ารอเปิดใช้งาน</h4>
+                        </div>
+                        <div id="stores-ready-to-open" class="stores-list-container">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub Tab: ติดตามการทำงาน -->
+                <div id="ms-monitor-stores" class="ms-sub-content hidden">
+                    <div class="admin-card">
+                        <div class="card-head">
+                            <h4><i class="fas fa-desktop"></i> ติดตามการทำงานร้านค้า</h4>
+                            <div class="online-status-summary">
+                                <span class="status-dot online"></span> ออนไลน์: <span id="count-online">0</span>
+                                <span class="status-dot offline"></span> ออฟไลน์: <span id="count-offline">0</span>
+                            </div>
+                        </div>
+                        <div id="active-stores-list" class="stores-monitor-grid">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub Tab: Payment Stores -->
+                <div id="ms-payment-stores" class="ms-sub-content hidden">
+                    <div class="admin-card">
+                        <div class="card-head">
+                            <h4><i class="fas fa-credit-card"></i> ตั้งค่าช่องทางชำระเงิน</h4>
+                            <button onclick="savePaymentChannels()" class="action-btn-sm" style="width:auto; padding:0 15px; background:var(--success); color:white; border:none;">
+                                <i class="fas fa-save"></i> บันทึก
+                            </button>
+                        </div>
+                        <div class="form-grid cols-2">
+                            <div>
+                                <label class="form-label">ธนาคาร</label>
+                                <select id="payment-bank-select" class="form-control">
+                                    <option value="">-- เลือกธนาคาร --</option>
+                                    <option value="kbank">ธนาคารกสิกรไทย (KBANK)</option>
+                                    <option value="scb">ธนาคารไทยพาณิชย์ (SCB)</option>
+                                    <option value="bbl">ธนาคารกรุงเทพ (BBL)</option>
+                                    <option value="ktb">ธนาคารกรุงไทย (KTB)</option>
+                                    <option value="tmb">ธนาคารทหารไทยธนชาต (TTB)</option>
+                                    <option value="gsb">ธนาคารออมสิน (GSB)</option>
+                                    <option value="bay">ธนาคารกรุงศรี (BAY)</option>
+                                </select>
+                                <input type="text" id="payment-bank-account" class="form-control" placeholder="เลขบัญชี" style="margin-top:10px;">
+                                <input type="text" id="payment-bank-name" class="form-control" placeholder="ชื่อบัญชี" style="margin-top:10px;">
+                            </div>
+                            <div>
+                                <label class="form-label">True Wallet</label>
+                                <input type="text" id="payment-truewallet" class="form-control" placeholder="เบอร์ True Wallet">
+                                <input type="text" id="payment-truewallet-name" class="form-control" placeholder="ชื่อบัญชี" style="margin-top:10px;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Requests List -->
+                    <div class="admin-card" style="margin-top: 20px;">
+                        <div class="card-head">
+                            <h4><i class="fas fa-file-invoice-dollar"></i> รายการแจ้งชำระเงิน</h4>
+                        </div>
+                        <div id="payment-requests-list" class="stores-list-container">
+                            <!-- Dynamic content -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sub Tab: Super Admin Dashboard -->
+                <div id="ms-super-dashboard" class="ms-sub-content hidden">
+                    <!-- Stats Row -->
+                    <div class="dashboard-force-row-3">
+                        <div class="stat-card blue">
+                            <div class="stat-icon"><i class="fas fa-store"></i></div>
+                            <div class="stat-info">
+                                <h4>ร้านค้าทั้งหมด</h4>
+                                <div class="stat-val" id="super-total-stores">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card green">
+                            <div class="stat-icon"><i class="fas fa-crown"></i></div>
+                            <div class="stat-info">
+                                <h4>Premium</h4>
+                                <div class="stat-val" id="super-premium-stores">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card orange">
+                            <div class="stat-icon"><i class="fas fa-box"></i></div>
+                            <div class="stat-info">
+                                <h4>Standard</h4>
+                                <div class="stat-val" id="super-standard-stores">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue Stats -->
+                    <div class="dashboard-force-row-2">
+                        <div class="admin-card">
+                            <div class="card-head"><h4><i class="fas fa-coins"></i> รายได้ระบบรวม</h4></div>
+                            <div class="super-revenue-display">
+                                <div class="revenue-amount" id="super-total-revenue">0 ฿</div>
+                                <div class="revenue-label">รายได้จากค่าระบบทั้งหมด</div>
+                            </div>
+                        </div>
+                        <div class="admin-card">
+                            <div class="card-head"><h4><i class="fas fa-signal"></i> สถานะร้านค้า Real-time</h4></div>
+                            <div class="realtime-status-box">
+                                <div class="status-item online">
+                                    <span class="status-dot online"></span>
+                                    <span>ออนไลน์</span>
+                                    <strong id="super-online-count">0</strong>
+                                </div>
+                                <div class="status-item offline">
+                                    <span class="status-dot offline"></span>
+                                    <span>ออฟไลน์</span>
+                                    <strong id="super-offline-count">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top/Bottom Stores -->
+                    <div class="dashboard-force-row-2">
+                        <div class="admin-card">
+                            <div class="card-head"><h4><i class="fas fa-trophy"></i> Top 5 ยอดขายสูงสุด</h4></div>
+                            <div id="top-stores-list" class="ranking-list">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                        <div class="admin-card">
+                            <div class="card-head"><h4><i class="fas fa-arrow-down"></i> 5 อันดับยอดขายน้อยสุด</h4></div>
+                            <div id="bottom-stores-list" class="ranking-list">
+                                <!-- Dynamic content -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Charts -->
+                    <div class="dashboard-force-row-2">
+                        <div class="admin-card">
+                            <div class="card-head"><h4><i class="fas fa-chart-pie"></i> สัดส่วนแพ็คเกจ</h4></div>
+                            <div class="chart-container" style="height: 250px;">
+                                <canvas id="chart-package-ratio"></canvas>
+                            </div>
+                        </div>
+                        <div class="admin-card">
+                            <div class="card-head"><h4><i class="fas fa-chart-bar"></i> รายได้รายเดือน</h4></div>
+                            <div class="chart-container" style="height: 250px;">
+                                <canvas id="chart-monthly-revenue"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    
+    <!-- Add Category Modal -->
+    <div id="add-category-modal" class="overlay-backdrop hidden">
+        <div class="modal-window center-content">
+            <h3 style="margin-bottom:15px;">เพิ่มหมวดหมู่ใหม่</h3>
+            <div class="input-group">
+                <i class="fas fa-tag"></i>
+                <input type="text" id="new-cat-name" placeholder="ชื่อหมวดหมู่ (เช่น อุปกรณ์เหมือง)" class="form-control">
+            </div>
+            
+            <div style="text-align:left; margin-top:15px; background:var(--bg-input); padding:15px; border-radius:12px; border:1px solid var(--border-color);">
+                <label style="font-weight:bold; margin-bottom:10px; display:block; color:var(--text-main);">ตัวเลือกการขาย:</label>
+                <div class="checkbox-list-grid">
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-cat-mixed" checked> ซื้อขายแบบคละ</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-cat-selected" checked> ซื้อขายแบบเลือก</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-cat-pure" checked> ซื้อขายแบบล้วน</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-cat-cross"> ซื้อขายแบบข้ามโซน</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-cat-tray"> ซื้อขายแบบถาด</label>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; width:100%;">
+                <button onclick="confirmAddCategory()" class="btn-primary">บันทึก</button>
+                <button onclick="document.getElementById('add-category-modal').classList.add('hidden')" class="btn-back" style="justify-content:center; width:100%;">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="add-product-modal" class="overlay-backdrop hidden">
+        <div class="modal-window center-content">
+            <h3 style="margin-bottom:15px;">เพิ่มสินค้าใหม่</h3>
+            <div class="input-group">
+                <i class="fas fa-box"></i>
+                <input type="text" id="new-prod-name" placeholder="ชื่อสินค้า (เช่น สลักเกลียว)" class="form-control">
+            </div>
+            
+             <div style="text-align:left; margin-top:15px; background:var(--bg-input); padding:15px; border-radius:12px; border:1px solid var(--border-color);">
+                <label style="font-weight:bold; margin-bottom:10px; display:block; color:var(--text-main);">สินค้าชิ้นนี้รองรับการขายแบบไหน:</label>
+                <div class="checkbox-list-grid">
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-prod-mixed" checked> ซื้อขายแบบคละ</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-prod-selected" checked> ซื้อขายแบบเลือก</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-prod-pure" checked> ซื้อขายแบบล้วน</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-prod-cross"> ซื้อขายแบบข้ามโซน</label>
+                    <label class="checkbox-wrapper"><input type="checkbox" id="check-prod-tray"> ซื้อขายแบบถาด</label>
+                </div>
+                <div style="margin-top:10px; font-size:0.8rem; color:var(--text-muted);">
+                    * หากไม่เลือก ระบบจะใช้ค่าตั้งต้นของหมวดหมู่
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; width:100%;">
+                <button onclick="confirmAddProduct()" class="btn-primary">บันทึก</button>
+                <button onclick="closeAddProductModal()" class="btn-back" style="justify-content:center; width:100%;">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order Detail Modal -->
+    <div id="order-detail-modal" class="overlay-backdrop hidden">
+        <div class="modal-window">
+             <div class="modal-header">
+                <h3>รายละเอียดออเดอร์</h3>
+                <button onclick="closeOrderDetail()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="order-detail-content" style="padding:20px; background:var(--bg-input); border-radius:12px; margin-top:10px;"></div>
+        </div>
+    </div>
+
+    <!-- Theme Modal -->
+    <div id="theme-modal" class="overlay-backdrop hidden">
+        <div class="modal-window" style="max-width:600px;">
+            <div class="modal-header">
+                <h3>เลือกธีมร้านค้า</h3>
+                <button onclick="closeThemeSelector()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding:20px 0;">
+                <div id="theme-grid-basic" class="theme-grid-layout" style="margin-bottom:25px;"></div>
+                
+                <div style="margin-top: 15px;">
+                    <button id="btn-save-theme" onclick="saveThemeSelection()" class="btn-primary">
+                        <i class="fas fa-save"></i> บันทึกการเปลี่ยนแปลง
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="help-modal" class="overlay-backdrop hidden">
+        <div class="modal-window video-window">
+            <div class="modal-header">
+                <h3 id="help-title">ช่วยเหลือ</h3>
+                <button onclick="closeHelpModal()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="video-container">
+                <iframe id="help-video-frame" src="" frameborder="0" allowfullscreen style="width:100%; height:100%; display:none;"></iframe>
+                <video id="help-video-player" controls style="width:100%; height:100%; display:none;"></video>
+                <div id="help-no-video" style="color:#aaa; display:none;">ไม่มีวิดีโอ</div>
+            </div>
+            <div style="padding:20px; background:white; max-height:150px; overflow-y:auto;">
+                <p id="help-desc-text" style="color:var(--text-main); line-height:1.6;"></p>
+            </div>
+        </div>
+    </div>
+
+    <div id="copy-overlay" class="overlay-backdrop hidden">
+        <div class="modal-window text-center">
+            <div class="success-icon"><i class="fas fa-check"></i></div>
+            <h2 class="text-success">คัดลอกสำเร็จ!</h2>
+            <p>พร้อมส่งให้แอดมินแล้ว</p>
+        </div>
+    </div>
+
+    <!-- CUSTOM CONFIRM MODAL (New Notification System) -->
+    <div id="custom-confirm-modal" class="overlay-backdrop hidden" style="z-index: 2000;">
+        <div class="modal-window text-center" style="max-width:350px;">
+            <div class="confirm-icon-box" style="margin: 0 auto 15px;">
+                <i class="fas fa-question" id="confirm-icon-symbol"></i>
+            </div>
+            <h3 id="confirm-title" style="margin-bottom:10px;">ยืนยัน?</h3>
+            <p id="confirm-message" style="color:var(--text-muted); margin-bottom:20px;">รายละเอียดการยืนยัน</p>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button id="btn-confirm-yes" class="btn-primary" style="width:auto; padding: 10px 25px;">ยืนยัน</button>
+                <button id="btn-confirm-no" class="btn-back" style="background:var(--bg-input); color:var(--text-main); border:1px solid var(--border-color);">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Manager Store Modals -->
+
+    <!-- Store Detail Modal -->
+    <div id="store-detail-modal" class="overlay-backdrop hidden" style="z-index: 2000;">
+        <div class="modal-window" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-store"></i> รายละเอียดร้านค้า</h3>
+                <button onclick="closeStoreDetailModal()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="store-detail-content" style="padding: 20px;">
+                <!-- Dynamic content -->
+            </div>
+            <div id="store-detail-actions" style="padding: 0 20px 20px; display: flex; gap: 10px;">
+                <!-- Dynamic actions -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Store Modal -->
+    <div id="open-store-modal" class="overlay-backdrop hidden" style="z-index: 2000;">
+        <div class="modal-window" style="max-width: 550px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-store"></i> เปิดร้านค้าใหม่</h3>
+                <button onclick="closeOpenStoreModal()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 20px;">
+                <input type="hidden" id="open-store-id">
+
+                <div class="store-info-preview" id="open-store-preview">
+                    <!-- Store info preview -->
+                </div>
+
+                <h5 class="section-title" style="margin-top: 20px;"><i class="fas fa-user-lock"></i> ข้อมูลเข้าสู่ระบบ</h5>
+                <div class="form-grid cols-2">
+                    <div>
+                        <label class="form-label">Username <span class="text-danger">*</span></label>
+                        <input type="text" id="open-store-username" class="form-control" placeholder="Username สำหรับร้านค้า">
+                    </div>
+                    <div>
+                        <label class="form-label">Password <span class="text-danger">*</span></label>
+                        <input type="text" id="open-store-password" class="form-control" placeholder="Password สำหรับร้านค้า">
+                    </div>
+                </div>
+
+                <h5 class="section-title" style="margin-top: 20px;"><i class="fas fa-key"></i> Serial Key</h5>
+                <div class="serial-key-display" id="open-store-serial-display">
+                    <!-- Serial key info -->
+                </div>
+
+                <h5 class="section-title" style="margin-top: 20px;"><i class="fas fa-crown"></i> แพ็คเกจ</h5>
+                <div class="package-selector-mini">
+                    <label class="pkg-option">
+                        <input type="radio" name="open_store_pkg" value="standard" checked>
+                        <span class="pkg-label">Standard</span>
+                    </label>
+                    <label class="pkg-option premium">
+                        <input type="radio" name="open_store_pkg" value="premium">
+                        <span class="pkg-label">Premium</span>
+                    </label>
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <button onclick="confirmOpenStore()" class="btn-success">
+                        <i class="fas fa-check-circle"></i> เปิดร้านค้า & ส่งไปติดตามการทำงาน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assign Serial Key Modal -->
+    <div id="assign-serial-modal" class="overlay-backdrop hidden" style="z-index: 2000;">
+        <div class="modal-window" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> ระบุ Serial Key</h3>
+                <button onclick="closeAssignSerialModal()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 20px;">
+                <input type="hidden" id="assign-serial-store-id">
+
+                <div class="store-info-preview" id="assign-serial-store-preview">
+                    <!-- Store info preview -->
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <label class="form-label">เลือก Serial Key</label>
+                    <select id="assign-serial-select" class="form-control">
+                        <option value="">-- เลือก Serial Key --</option>
+                    </select>
+                </div>
+
+                <div id="selected-serial-preview" class="serial-preview-box hidden" style="margin-top: 15px;">
+                    <!-- Selected serial key preview -->
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <button onclick="confirmAssignSerial()" class="btn-primary">
+                        <i class="fas fa-link"></i> ผูก Serial Key & ส่งไปเปิดร้าน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Payment Modal (for individual stores) -->
+    <div id="store-payment-modal" class="overlay-backdrop hidden" style="z-index: 2000;">
+        <div class="modal-window" style="max-width: 650px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-credit-card"></i> Payment - <span id="payment-store-name">ร้านค้า</span></h3>
+                <button onclick="closeStorePaymentModal()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 20px;">
+                <input type="hidden" id="payment-store-id">
+
+                <!-- Payment Dashboard -->
+                <div class="payment-dashboard">
+                    <div class="payment-stat-row">
+                        <div class="payment-stat countdown">
+                            <div class="payment-stat-icon"><i class="fas fa-hourglass-half"></i></div>
+                            <div class="payment-stat-info">
+                                <div class="payment-stat-label">เวลาคงเหลือระบบ</div>
+                                <div class="payment-countdown" id="payment-countdown">00:00:00:00:00:00</div>
+                            </div>
+                        </div>
+                        <div class="payment-stat status">
+                            <div class="payment-stat-icon"><i class="fas fa-circle"></i></div>
+                            <div class="payment-stat-info">
+                                <div class="payment-stat-label">สถานะร้าน</div>
+                                <div class="payment-status-badge" id="payment-status">เปิดใช้งาน</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="payment-stat-row">
+                        <div class="payment-stat amount">
+                            <div class="payment-stat-icon"><i class="fas fa-coins"></i></div>
+                            <div class="payment-stat-info">
+                                <div class="payment-stat-label">ยอดค่าระบบต่อรอบ</div>
+                                <div class="payment-amount" id="payment-amount">0 ฿</div>
+                            </div>
+                        </div>
+                        <div class="payment-stat expiry">
+                            <div class="payment-stat-icon"><i class="fas fa-calendar-times"></i></div>
+                            <div class="payment-stat-info">
+                                <div class="payment-stat-label">วันหมดอายุระบบ</div>
+                                <div class="payment-expiry" id="payment-expiry">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Channels -->
+                <h5 class="section-title" style="margin-top: 25px;"><i class="fas fa-university"></i> ช่องทางชำระเงิน</h5>
+                <div id="payment-channels-display" class="payment-channels-grid">
+                    <!-- Dynamic content -->
+                </div>
+
+                <!-- Submit Payment -->
+                <h5 class="section-title" style="margin-top: 25px;"><i class="fas fa-upload"></i> แจ้งชำระเงิน</h5>
+                <div class="form-grid">
+                    <div>
+                        <label class="form-label">ลิงก์หลักฐาน / รูปภาพ</label>
+                        <input type="text" id="payment-proof-link" class="form-control" placeholder="ลิงก์สลิปโอนเงิน หรือ URL รูปภาพ">
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <label class="form-label">หมายเหตุ</label>
+                        <textarea id="payment-note" class="form-control" rows="2" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"></textarea>
+                    </div>
+                </div>
+                <button onclick="submitPaymentProof()" class="btn-primary" style="margin-top: 15px;">
+                    <i class="fas fa-paper-plane"></i> ส่งหลักฐานการชำระเงิน
+                </button>
+
+                <!-- Payment History -->
+                <h5 class="section-title" style="margin-top: 25px;"><i class="fas fa-history"></i> ประวัติการชำระเงิน</h5>
+                <div id="payment-history-list" class="payment-history-container">
+                    <!-- Dynamic content -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notify Payment Modal (Super Admin) -->
+    <div id="notify-payment-modal" class="overlay-backdrop hidden" style="z-index: 2000;">
+        <div class="modal-window" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-bell"></i> แจ้งยอดชำระเงิน</h3>
+                <button onclick="closeNotifyPaymentModal()" class="btn-back"><i class="fas fa-times"></i></button>
+            </div>
+            <div style="padding: 20px;">
+                <input type="hidden" id="notify-payment-store-id">
+
+                <div class="store-info-preview" id="notify-payment-store-preview">
+                    <!-- Store info preview -->
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <label class="form-label">ยอดค่าระบบที่ต้องชำระ (บาท)</label>
+                    <input type="number" id="notify-payment-amount" class="form-control" placeholder="ระบุยอดเงิน">
+                </div>
+                <div style="margin-top: 15px;">
+                    <label class="form-label">ข้อความแจ้งเตือน</label>
+                    <textarea id="notify-payment-message" class="form-control" rows="3" placeholder="ข้อความที่จะแจ้งให้ร้านค้าทราบ"></textarea>
+                </div>
+
+                <div style="margin-top: 25px;">
+                    <button onclick="sendPaymentNotification()" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> ส่งแจ้งยอดชำระ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Store Locked Overlay -->
+    <div id="store-locked-overlay" class="overlay-backdrop hidden" style="z-index: 9999;">
+        <div class="modal-window text-center" style="max-width: 400px;">
+            <div class="locked-icon-box">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2 style="color: var(--danger); margin-bottom: 15px;">ระบบถูกระงับ</h2>
+            <p style="color: var(--text-muted); margin-bottom: 20px;">กรุณาติดต่อผู้ดูแลระบบเพื่อต่ออายุการใช้งาน</p>
+            <div class="locked-contact-box">
+                <div class="blink-dot"></div>
+                <span>ติดต่อผู้ดูแลระบบ</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Store Dashboard Modal (Super Admin viewing store) -->
+    <div id="view-store-dashboard-modal" class="overlay-backdrop hidden" style="z-index: 1500;">
+        <div class="modal-window" style="max-width: 95%; width: 1200px; height: 90vh; padding: 0;">
+            <div class="modal-header" style="background: var(--admin-sidebar); color: white;">
+                <h3><i class="fas fa-eye"></i> ดู Dashboard ร้าน: <span id="viewing-store-name">ร้านค้า</span></h3>
+                <button onclick="closeViewStoreDashboard()" class="btn-back" style="color: white;">
+                    <i class="fas fa-arrow-left"></i> กลับ SUPER ADMIN
+                </button>
+            </div>
+            <div id="view-store-dashboard-content" style="height: calc(100% - 60px); overflow-y: auto; padding: 20px; background: var(--bg-body);">
+                <!-- Store dashboard iframe or content -->
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

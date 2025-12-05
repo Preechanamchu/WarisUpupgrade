@@ -1,0 +1,18 @@
+{
+  "name": "warishayday-system",
+  "version": "6.0.0",
+  "description": "Warishayday Ordering System with PostgreSQL",
+  "main": "functions/api.js",
+  "scripts": {
+    "start": "node functions/api.js",
+    "build": "echo 'No build step required for functions'"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "pg": "^8.10.0",
+    "serverless-http": "^3.2.0"
+  }
+}
